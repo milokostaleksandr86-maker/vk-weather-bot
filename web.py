@@ -1,11 +1,10 @@
-import sys
 import logging
 import threading
 import os
 from flask import Flask
 from dotenv import load_dotenv
 
-# Настройка логирования, чтобы всё писалось в консоль Render
+# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -21,7 +20,7 @@ def home():
     return "VK Bot is running!"
 
 def run_bot():
-    """Запускает VK бота в отдельном потоке с обработкой ошибок"""
+    """Запускает VK бота в отдельном потоке"""
     try:
         logger.info("Пытаюсь импортировать vk_bot...")
         import vk_bot
