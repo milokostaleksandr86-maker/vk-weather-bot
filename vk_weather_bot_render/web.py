@@ -1,7 +1,15 @@
-from flask import Flask
+import logging
 import threading
 import os
+from flask import Flask
 from dotenv import load_dotenv
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -12,15 +20,22 @@ def home():
     return "VK Bot is running!"
 
 def run_bot():
-    # Импортируем и запускаем бота
-    import vk_bot
-    vk_bot.main()
+    """Запускает VK бота в отдельном потоке"""
+    try:
+        logger.info("Пытаюсь импортировать vk_bot...")
+        import vk_bot
+        logger.info("vk_bot импортирован успешно. Запускаю main()...")
+        vk_bot.main()
+    except Exception as e:
+        logger.error(f"Ошибка в боте: {e}", exc_info=True)
 
 if __name__ == "__main__":
     # Запускаем бота в отдельном потоке
-    bot_thread = threading.Thread(target=run_bot)
+    bot_thread = threading.Thread(target=run_bot, daemon=True)
     bot_thread.start()
+    logger.info("Поток бота запущен")
     
     # Запускаем веб-сервер
     port = int(os.environ.get("PORT", 10000))
+    logger.info(f"Запуск веб-сервера на порту {port}")
     app.run(host='0.0.0.0', port=port)
