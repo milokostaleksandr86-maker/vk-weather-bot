@@ -1,3 +1,5 @@
 vk-api
 requests
 python-dotenv
+flask
+gunicorn
