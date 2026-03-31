@@ -51,3 +51,6 @@ def main():
             text = msg.get('text', '')
             logger.info(f"📩 {user_id}: {text}")
             handle_message(text, user_id)
+
+if __name__ == "__main__":
+    main()
