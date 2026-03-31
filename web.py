@@ -12,34 +12,24 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Флаг, чтобы бот запустился только один раз
-bot_started = False
-bot_lock = threading.Lock()
-
-def start_bot():
-    global bot_started
-    with bot_lock:
-        if bot_started:
-            return
-        bot_started = True
-    
-    logger.info("Запуск бота в отдельном потоке")
-    def run():
-        try:
-            import vk_bot
-            vk_bot.main()
-        except Exception as e:
-            logger.error("Ошибка в боте:", exc_info=True)
-    
-    thread = threading.Thread(target=run, daemon=True)
-    thread.start()
-
 @app.route('/')
 def home():
-    # При первом запросе запускаем бота
-    start_bot()
     return "VK Bot is running!"
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+def run_bot():
+    logger.info(">>> run_bot() запущена")
+    try:
+        import vk_bot
+        logger.info("Запуск vk_bot.main()")
+        vk_bot.main()
+    except Exception as e:
+        logger.error("Ошибка в боте:", exc_info=True)
+
+# Проверяем, что мы в воркере, а не в мастер-процессе
+# gunicorn передаёт переменную окружения, которую можно проверить
+if os.environ.get('GUNICORN_MODE') == 'worker' or 'gunicorn' in os.environ.get('_', ''):
+    logger.info("Запуск бота в воркере")
+    bot_thread = threading.Thread(target=run_bot, daemon=True)
+    bot_thread.start()
+else:
+    logger.info("Мастер-процесс gunicorn, бот не запускается")
