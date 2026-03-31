@@ -1,23 +1,45 @@
+import logging
 import threading
 import os
+import sys
 from flask import Flask
 from dotenv import load_dotenv
+
+logging.basicConfig(level=logging.INFO, stream=sys.stdout, force=True)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
 app = Flask(__name__)
 
+# Флаг, чтобы бот запустился только один раз
+bot_started = False
+bot_lock = threading.Lock()
+
+def start_bot():
+    global bot_started
+    with bot_lock:
+        if bot_started:
+            logger.info("Бот уже запущен, повторный запуск игнорируется")
+            return
+        bot_started = True
+    
+    logger.info("Запуск бота в отдельном потоке")
+    def run():
+        try:
+            import vk_bot
+            vk_bot.main()
+        except Exception as e:
+            logger.error("Ошибка в боте:", exc_info=True)
+    
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+
 @app.route('/')
 def home():
+    # При первом запросе запускаем бота
+    start_bot()
     return "VK Bot is running!"
-
-def run_bot():
-    import vk_bot
-    vk_bot.main()
-
-# Запускаем бота в фоне при старте
-bot_thread = threading.Thread(target=run_bot, daemon=True)
-bot_thread.start()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
