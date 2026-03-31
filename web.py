@@ -5,32 +5,41 @@ import sys
 from flask import Flask
 from dotenv import load_dotenv
 
-# Принудительный вывод в stdout
 logging.basicConfig(level=logging.INFO, stream=sys.stdout, force=True)
 logger = logging.getLogger(__name__)
-
-logger.info("=== web.py загружается ===")
 
 load_dotenv()
 
 app = Flask(__name__)
 
+# Флаг, чтобы бот запустился только один раз
+bot_started = False
+bot_lock = threading.Lock()
+
+def start_bot():
+    global bot_started
+    with bot_lock:
+        if bot_started:
+            return
+        bot_started = True
+    
+    logger.info("Запуск бота в отдельном потоке")
+    def run():
+        try:
+            import vk_bot
+            vk_bot.main()
+        except Exception as e:
+            logger.error("Ошибка в боте:", exc_info=True)
+    
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+
 @app.route('/')
 def home():
+    # При первом запросе запускаем бота
+    start_bot()
     return "VK Bot is running!"
 
-def run_bot():
-    logger.info(">>> run_bot() запущена")
-    try:
-        logger.info("Импорт vk_bot...")
-        import vk_bot
-        logger.info("Запуск vk_bot.main()")
-        vk_bot.main()
-    except Exception as e:
-        logger.error("Ошибка в боте:", exc_info=True)
-
-# ЗАПУСКАЕМ БОТА СРАЗУ ПРИ ЗАГРУЗКЕ МОДУЛЯ
-logger.info("Создаём поток для бота")
-bot_thread = threading.Thread(target=run_bot, daemon=True)
-bot_thread.start()
-logger.info("Поток бота запущен из глобального кода")
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
