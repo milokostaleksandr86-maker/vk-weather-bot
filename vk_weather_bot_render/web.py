@@ -5,8 +5,11 @@ import sys
 from flask import Flask
 from dotenv import load_dotenv
 
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+# Принудительно пишем в stdout, чтобы Render точно показал логи
+logging.basicConfig(level=logging.INFO, stream=sys.stdout, force=True)
 logger = logging.getLogger(__name__)
+
+logger.info("=== Файл web.py загружен ===")
 
 load_dotenv()
 
@@ -17,14 +20,14 @@ def home():
     return "VK Bot is running!"
 
 def run_bot():
-    logger.info("Функция run_bot() вызвана")
+    logger.info(">>> run_bot() вызвана")
     try:
-        logger.info("Попытка импортировать vk_bot...")
+        logger.info("Попытка импорта vk_bot...")
         import vk_bot
-        logger.info("Модуль vk_bot импортирован. Вызов vk_bot.main()...")
+        logger.info("Импорт успешен, запускаю vk_bot.main()")
         vk_bot.main()
     except Exception as e:
-        logger.error("❌ Ошибка при запуске бота:", exc_info=True)
+        logger.error("Ошибка в боте:", exc_info=True)
 
 if __name__ == "__main__":
     logger.info("Запуск потока бота")
@@ -33,5 +36,5 @@ if __name__ == "__main__":
     logger.info("Поток бота запущен")
     
     port = int(os.environ.get("PORT", 10000))
-    logger.info(f"Запуск веб-сервера на порту {port}")
+    logger.info(f"Запуск Flask на порту {port}")
     app.run(host='0.0.0.0', port=port)
